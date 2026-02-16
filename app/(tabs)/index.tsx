@@ -1,0 +1,203 @@
+import React from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  Image,
+  RefreshControl,
+} from "react-native";
+import { AnnouncementType } from "../../types";
+import { usePendingAds, useActivateAd } from "../../hooks/usePendingAds";
+
+export default function PendingAdsScreen() {
+  const { data: ads = [], isLoading, refetch, isRefetching } = usePendingAds();
+  const activateAdMutation = useActivateAd();
+
+  const handleActivate = async (ad: AnnouncementType) => {
+    Alert.alert("Activer l'annonce", `Voulez-vous activer "${ad.title}" ?`, [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Activer",
+        onPress: async () => {
+          try {
+            await activateAdMutation.mutateAsync({ adId: ad.id, ad });
+            Alert.alert("Succès", "Annonce activée et notification envoyée");
+          } catch (error) {
+            console.error("Error activating ad:", error);
+            Alert.alert("Erreur", "Impossible d'activer l'annonce");
+          }
+        },
+      },
+    ]);
+  };
+
+  const renderAdItem = ({ item }: { item: AnnouncementType }) => (
+    <View style={styles.adCard}>
+      {item.images && item.images.length > 0 && (
+        <Image source={{ uri: item.images[0] }} style={styles.adImage} />
+      )}
+      <View style={styles.adContent}>
+        <Text style={styles.adTitle}>{item.title}</Text>
+        <Text style={styles.adPrice}>{item.price.toLocaleString()} FCFA</Text>
+        <Text style={styles.adCategory}>
+          {item.category} - {item.subCategory}
+        </Text>
+        <Text style={styles.adCity}>{item.city}</Text>
+        <Text style={styles.adDescription} numberOfLines={2}>
+          {item.description}
+        </Text>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, styles.activateButton]}
+            onPress={() => handleActivate(item)}
+            disabled={activateAdMutation.isPending}
+          >
+            <Text style={styles.buttonText}>Activer</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+
+  if (isLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Annonces en attente</Text>
+        <Text style={styles.headerCount}>{ads.length} annonce(s)</Text>
+      </View>
+
+      <FlatList
+        data={ads}
+        renderItem={renderAdItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Aucune annonce en attente</Text>
+          </View>
+        }
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  header: {
+    backgroundColor: "#fff",
+    padding: 16,
+    paddingTop: 50,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  headerCount: {
+    fontSize: 14,
+    color: "#666",
+  },
+  listContainer: {
+    padding: 16,
+  },
+  adCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  adImage: {
+    width: "100%",
+    height: 200,
+    resizeMode: "cover",
+  },
+  adContent: {
+    padding: 16,
+  },
+  adTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  adPrice: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#007AFF",
+    marginBottom: 4,
+  },
+  adCategory: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  adCity: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 8,
+  },
+  adDescription: {
+    fontSize: 14,
+    color: "#333",
+    marginBottom: 16,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  activateButton: {
+    backgroundColor: "#4CAF50",
+  },
+  rejectButton: {
+    backgroundColor: "#F44336",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    marginTop: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#999",
+  },
+});

@@ -1,0 +1,119 @@
+// code page test de lecoinbiz !
+
+import Container from "@/components/Container";
+import AppButton from "@/components/custom/AppButton";
+import { useCurrentUser } from "@/hooks/services/auth/signIn/useCurrentUser";
+import { useVerifyEmailStore } from "@/store/useVerifyEmailStore";
+import functions from "@react-native-firebase/functions";
+import messaging from "@react-native-firebase/messaging";
+import { useQueryClient } from "@tanstack/react-query";
+import React from "react";
+
+export default function Test() {
+  const { isOpen, open } = useVerifyEmailStore();
+  const queryClient = useQueryClient();
+  const currentUser = useCurrentUser();
+
+  const [generalNotifIsloading, setGeneralNotifIsloading] =
+    React.useState(false);
+
+  const [userNotifIsloading, setUserNotifIsloading] = React.useState(false);
+
+  const [getNotifsIsloading, setGetNotifsIsloading] = React.useState(false);
+
+  const [invalidiNotif, setInvalidiNotif] = React.useState(false);
+
+  const title = "Bonjour mec";
+  const body = "Juste un bonjour";
+
+  const createGeneralNotif = async () => {
+    try {
+      setGeneralNotifIsloading(true);
+      const createGeneralNotifFn = functions().httpsCallable(
+        "createGeneralNotification",
+      );
+      await createGeneralNotifFn({ title, body });
+      setGeneralNotifIsloading(false);
+    } catch (error) {
+      setGeneralNotifIsloading(false);
+      console.error("Erreur createGeneralNotif : ", error);
+    }
+  };
+
+  const createUserNotif = async () => {
+    try {
+      setUserNotifIsloading(true);
+      const createUserNotifFn = functions().httpsCallable(
+        "createUserNotification",
+      );
+      await createUserNotifFn({ title, body, userId: currentUser?.uid });
+      setUserNotifIsloading(false);
+    } catch (error) {
+      setUserNotifIsloading(false);
+      console.error("Erreur createUserNotif : ", error);
+    }
+  };
+
+  const getNotifs = async () => {
+    try {
+      setGetNotifsIsloading(true);
+      const getNotifFn = functions().httpsCallable("getNotifications");
+
+      const notifs = await getNotifFn();
+
+      console.log("notifs : ", JSON.stringify(notifs, null, 2));
+
+      setGetNotifsIsloading(false);
+    } catch (error) {
+      setGetNotifsIsloading(false);
+      console.error("Erreur getNotifs : ", error);
+    }
+  };
+
+  const getToken = async () => {
+    const token = await messaging().getToken();
+    console.log("token : ", token);
+  };
+
+  return (
+    <Container>
+      <AppButton
+        title={`general notif`}
+        onPress={createGeneralNotif}
+        isLoading={generalNotifIsloading}
+      />
+      <AppButton
+        title={`user notif`}
+        onPress={createUserNotif}
+        isLoading={userNotifIsloading}
+      />
+      <AppButton
+        title={`get notif`}
+        onPress={getNotifs}
+        isLoading={getNotifsIsloading}
+      />
+      <AppButton
+        title={`get fcmtoken`}
+        onPress={getToken}
+        // isLoading={getNotifsIsloading}
+      />
+      <AppButton
+        title={`inva notif`}
+        onPress={async () => {
+          try {
+            console.log("hello");
+
+            setInvalidiNotif(true);
+            await queryClient.invalidateQueries({
+              queryKey: ["notifications"],
+            });
+            setInvalidiNotif(false);
+          } catch (error) {
+            console.log("invalid not : ", error);
+          }
+        }}
+        isLoading={invalidiNotif}
+      />
+    </Container>
+  );
+}

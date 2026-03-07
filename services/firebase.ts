@@ -1,9 +1,10 @@
 import { cloudFunctions } from "../config/firebase";
 import functions from "@react-native-firebase/functions";
+import { firebasyeFunctions } from "../utils/firebase";
 
 export const sendGeneralNotification = async (title: string, body: string) => {
   try {
-    const createGeneralNotificationFunction = functions().httpsCallable(
+    const createGeneralNotificationFunction = firebasyeFunctions.httpsCallable(
       "createGeneralNotification",
     );
     await createGeneralNotificationFunction({

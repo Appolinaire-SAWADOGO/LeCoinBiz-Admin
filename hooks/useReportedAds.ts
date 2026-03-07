@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "../config/firebase";
 import { AnnouncementType, ReportType } from "../types";
 import functions from "@react-native-firebase/functions";
+import { firebasyeFunctions } from "../utils/firebase";
 
 type AdWithReports = AnnouncementType & {
   reportCount: number;
@@ -12,7 +13,7 @@ export const useReportedAds = () => {
     queryFn: async () => {
       try {
         const reportAdsFunction =
-          functions().httpsCallable("adminGetReportAds");
+          firebasyeFunctions.httpsCallable("adminGetReportAds");
         const rslt = (await reportAdsFunction()) as any;
 
         const ads: AdWithReports[] = rslt.data?.ads as AdWithReports[];
@@ -36,7 +37,7 @@ export const useSetAdPending = () => {
   return useMutation({
     mutationFn: async ({ adId, ad }: { adId: string; ad: AdWithReports }) => {
       const setPendingAdFunction =
-        functions().httpsCallable("adminSetAdPending");
+        firebasyeFunctions.httpsCallable("adminSetAdPending");
 
       await setPendingAdFunction({
         adId,
@@ -56,7 +57,7 @@ export const useIgnoreReports = () => {
 
   return useMutation({
     mutationFn: async ({ adId }: { adId: string }) => {
-      const ignoreReportsFunction = functions().httpsCallable(
+      const ignoreReportsFunction = firebasyeFunctions.httpsCallable(
         "adminIgnoreAdReport",
       );
 

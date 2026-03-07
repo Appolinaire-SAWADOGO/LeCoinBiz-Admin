@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { AnnouncementType } from "../../types";
 import { usePendingAds, useActivateAd } from "../../hooks/usePendingAds";
+import AppText from "../../components/AppText";
 
 export default function PendingAdsScreen() {
   const { data: ads = [], isLoading, refetch, isRefetching } = usePendingAds();
@@ -41,15 +42,17 @@ export default function PendingAdsScreen() {
         <Image source={{ uri: item.images[0] }} style={styles.adImage} />
       )}
       <View style={styles.adContent}>
-        <Text style={styles.adTitle}>{item.title}</Text>
-        <Text style={styles.adPrice}>{item.price.toLocaleString()} FCFA</Text>
-        <Text style={styles.adCategory}>
+        <AppText style={styles.adTitle}>{item.title}</AppText>
+        <AppText style={styles.adPrice}>
+          {item.price.toLocaleString()} FCFA
+        </AppText>
+        <AppText style={styles.adCategory}>
           {item.category} - {item.subCategory}
-        </Text>
-        <Text style={styles.adCity}>{item.city}</Text>
-        <Text style={styles.adDescription} numberOfLines={2}>
+        </AppText>
+        <AppText style={styles.adCity}>{item.city}</AppText>
+        <AppText style={styles.adDescription} numberOfLines={2}>
           {item.description}
-        </Text>
+        </AppText>
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
@@ -57,7 +60,7 @@ export default function PendingAdsScreen() {
             onPress={() => handleActivate(item)}
             disabled={activateAdMutation.isPending}
           >
-            <Text style={styles.buttonText}>Activer</Text>
+            <AppText style={styles.buttonText}>Activer</AppText>
           </TouchableOpacity>
         </View>
       </View>
@@ -75,8 +78,8 @@ export default function PendingAdsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Annonces en attente</Text>
-        <Text style={styles.headerCount}>{ads.length} annonce(s)</Text>
+        <AppText style={styles.headerTitle}>Annonces en attente</AppText>
+        <AppText style={styles.headerCount}>{ads.length} annonce(s)</AppText>
       </View>
 
       <FlatList
@@ -89,7 +92,9 @@ export default function PendingAdsScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Aucune annonce en attente</Text>
+            <AppText style={styles.emptyText}>
+              Aucune annonce en attente
+            </AppText>
           </View>
         }
       />

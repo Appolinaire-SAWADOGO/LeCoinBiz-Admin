@@ -39,6 +39,14 @@
       "expo-asset",
       "expo-font"
     ],
-    "scheme": "lecoinbiz-admin"
+    "scheme": "lecoinbiz-admin",
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "874418b0-6460-45b9-9a6a-e827db6b121c"
+      }
+    }
   }
 }

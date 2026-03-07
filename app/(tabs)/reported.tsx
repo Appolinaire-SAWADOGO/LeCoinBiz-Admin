@@ -16,6 +16,7 @@ import {
   useSetAdPending,
   useIgnoreReports,
 } from "../../hooks/useReportedAds";
+import AppText from "../../components/AppText";
 
 type AdWithReports = AnnouncementType & {
   reportCount: number;
@@ -76,9 +77,9 @@ export default function ReportedAdsScreen() {
   const renderAdItem = ({ item }: { item: AdWithReports }) => (
     <View style={styles.adCard}>
       <View style={styles.reportBadge}>
-        <Text style={styles.reportBadgeText}>
+        <AppText style={styles.reportBadgeText}>
           🚨 {item.reportCount} signalement(s)
-        </Text>
+        </AppText>
       </View>
 
       {item.images && item.images.length > 0 && (
@@ -86,16 +87,18 @@ export default function ReportedAdsScreen() {
       )}
 
       <View style={styles.adContent}>
-        <Text style={styles.adTitle}>{item.title}</Text>
-        <Text style={styles.adPrice}>{item.price.toLocaleString()} FCFA</Text>
-        <Text style={styles.adCategory}>
+        <AppText style={styles.adTitle}>{item.title}</AppText>
+        <AppText style={styles.adPrice}>
+          {item.price.toLocaleString()} FCFA
+        </AppText>
+        <AppText style={styles.adCategory}>
           {item.category} - {item.subCategory}
-        </Text>
-        <Text style={styles.adCity}>{item.city}</Text>
-        <Text style={styles.adStatus}>Statut: {item.status}</Text>
-        <Text style={styles.adDescription} numberOfLines={2}>
+        </AppText>
+        <AppText style={styles.adCity}>{item.city}</AppText>
+        <AppText style={styles.adStatus}>Statut: {item.status}</AppText>
+        <AppText style={styles.adDescription} numberOfLines={2}>
           {item.description}
-        </Text>
+        </AppText>
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
@@ -103,7 +106,7 @@ export default function ReportedAdsScreen() {
             onPress={() => handleSetPending(item)}
             disabled={setAdPendingMutation.isPending}
           >
-            <Text style={styles.buttonText}>En attente</Text>
+            <AppText style={styles.buttonText}>En attente</AppText>
           </TouchableOpacity>
         </View>
 
@@ -112,7 +115,7 @@ export default function ReportedAdsScreen() {
           onPress={() => handleIgnore(item)}
           disabled={ignoreReportsMutation.isPending}
         >
-          <Text style={styles.buttonText}>Ignorer</Text>
+          <AppText style={styles.buttonText}>Ignorer</AppText>
         </TouchableOpacity>
       </View>
     </View>
@@ -129,8 +132,8 @@ export default function ReportedAdsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Annonces signalées</Text>
-        <Text style={styles.headerCount}>{ads.length} annonce(s)</Text>
+        <AppText style={styles.headerTitle}>Annonces signalées</AppText>
+        <AppText style={styles.headerCount}>{ads.length} annonce(s)</AppText>
       </View>
 
       <FlatList
@@ -143,7 +146,7 @@ export default function ReportedAdsScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Aucune annonce signalée</Text>
+            <AppText style={styles.emptyText}>Aucune annonce signalée</AppText>
           </View>
         }
       />

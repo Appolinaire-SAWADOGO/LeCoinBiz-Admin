@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "../config/firebase";
 import { AnnouncementType } from "../types";
 import functions from "@react-native-firebase/functions";
+import { firebasyeFunctions } from "../utils/firebase";
 
 export const usePendingAds = () => {
   return useQuery({
@@ -41,7 +42,8 @@ export const useActivateAd = () => {
       adId: string;
       ad: AnnouncementType;
     }) => {
-      const activateAdFunction = functions().httpsCallable("adminActivateAd");
+      const activateAdFunction =
+        firebasyeFunctions.httpsCallable("adminActivateAd");
       await activateAdFunction({
         adId,
         adTitle: ad.title,

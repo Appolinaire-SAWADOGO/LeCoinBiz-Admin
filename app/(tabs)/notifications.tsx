@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { sendGeneralNotification } from "../../services/firebase";
 import { Ionicons } from "@expo/vector-icons";
+import AppText from "../../components/AppText";
 
 type NotificationType = "general" | "user";
 
@@ -81,11 +82,11 @@ export default function NotificationsScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Envoyer une notification</Text>
+          <AppText style={styles.headerTitle}>Envoyer une notification</AppText>
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.sectionTitle}>Type de notification</Text>
+          <AppText style={styles.sectionTitle}>Type de notification</AppText>
           <View style={styles.typeContainer}>
             <TouchableOpacity
               style={[
@@ -99,20 +100,20 @@ export default function NotificationsScreen() {
                 size={24}
                 color={notificationType === "general" ? "#fff" : "#007AFF"}
               />
-              <Text
+              <AppText
                 style={[
                   styles.typeButtonText,
                   notificationType === "general" && styles.typeButtonTextActive,
                 ]}
               >
                 Générale
-              </Text>
+              </AppText>
             </TouchableOpacity>
           </View>
 
           {notificationType === "user" && (
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>ID Utilisateur *</Text>
+              <AppText style={styles.label}>ID Utilisateur *</AppText>
               <TextInput
                 style={styles.input}
                 placeholder="Entrez l'ID de l'utilisateur"
@@ -124,7 +125,7 @@ export default function NotificationsScreen() {
           )}
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Titre *</Text>
+            <AppText style={styles.label}>Titre *</AppText>
             <TextInput
               style={styles.input}
               placeholder="Titre de la notification"
@@ -132,11 +133,11 @@ export default function NotificationsScreen() {
               onChangeText={setTitle}
               maxLength={100}
             />
-            <Text style={styles.charCount}>{title.length}/100</Text>
+            <AppText style={styles.charCount}>{title.length}/100</AppText>
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Message *</Text>
+            <AppText style={styles.label}>Message *</AppText>
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Contenu de la notification"
@@ -147,22 +148,22 @@ export default function NotificationsScreen() {
               maxLength={500}
               textAlignVertical="top"
             />
-            <Text style={styles.charCount}>{body.length}/500</Text>
+            <AppText style={styles.charCount}>{body.length}/500</AppText>
           </View>
 
           <View style={styles.previewContainer}>
-            <Text style={styles.previewTitle}>Aperçu</Text>
+            <AppText style={styles.previewTitle}>Aperçu</AppText>
             <View style={styles.previewCard}>
               <View style={styles.previewHeader}>
                 <Ionicons name="notifications" size={20} color="#007AFF" />
-                <Text style={styles.previewAppName}>LeCoinBiz</Text>
+                <AppText style={styles.previewAppName}>LeCoinBiz</AppText>
               </View>
-              <Text style={styles.previewNotificationTitle}>
+              <AppText style={styles.previewNotificationTitle}>
                 {title || "Titre de la notification"}
-              </Text>
-              <Text style={styles.previewNotificationBody}>
+              </AppText>
+              <AppText style={styles.previewNotificationBody}>
                 {body || "Contenu de la notification"}
-              </Text>
+              </AppText>
             </View>
           </View>
 
@@ -176,9 +177,9 @@ export default function NotificationsScreen() {
             ) : (
               <>
                 <Ionicons name="send" size={20} color="#fff" />
-                <Text style={styles.sendButtonText}>
+                <AppText style={styles.sendButtonText}>
                   Envoyer la notification
-                </Text>
+                </AppText>
               </>
             )}
           </TouchableOpacity>

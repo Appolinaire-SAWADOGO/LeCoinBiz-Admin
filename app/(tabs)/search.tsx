@@ -161,7 +161,7 @@ export default function SearchScreen() {
 
       {isLoading || isFetching ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#641BB4" />
           <AppText style={styles.loadingText}>Recherche en cours...</AppText>
         </View>
       ) : (
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   searchButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#641BB4",
     padding: 14,
     borderRadius: 10,
     alignItems: "center",
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   adPrice: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#007AFF",
+    color: "#641BB4",
     marginBottom: 4,
   },
   adCategory: {

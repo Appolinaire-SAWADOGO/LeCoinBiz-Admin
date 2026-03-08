@@ -124,7 +124,7 @@ export default function ReportedAdsScreen() {
   if (isLoading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#641BB4" />
       </View>
     );
   }
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   adPrice: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#007AFF",
+    color: "#641BB4",
     marginBottom: 4,
   },
   adCategory: {

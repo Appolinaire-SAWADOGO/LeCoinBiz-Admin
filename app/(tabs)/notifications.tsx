@@ -98,7 +98,7 @@ export default function NotificationsScreen() {
               <Ionicons
                 name="people"
                 size={24}
-                color={notificationType === "general" ? "#fff" : "#007AFF"}
+                color={notificationType === "general" ? "#fff" : "#641BB4"}
               />
               <AppText
                 style={[
@@ -155,7 +155,7 @@ export default function NotificationsScreen() {
             <AppText style={styles.previewTitle}>Aperçu</AppText>
             <View style={styles.previewCard}>
               <View style={styles.previewHeader}>
-                <Ionicons name="notifications" size={20} color="#007AFF" />
+                <Ionicons name="notifications" size={20} color="#641BB4" />
                 <AppText style={styles.previewAppName}>LeCoinBiz</AppText>
               </View>
               <AppText style={styles.previewNotificationTitle}>
@@ -230,16 +230,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#fff",
     borderWidth: 2,
-    borderColor: "#007AFF",
+    borderColor: "#641BB4",
     gap: 8,
   },
   typeButtonActive: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#641BB4",
   },
   typeButtonText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#007AFF",
+    color: "#641BB4",
   },
   typeButtonTextActive: {
     color: "#fff",
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   previewAppName: {
     fontSize: 14,
     fontWeight: "bold",
-    color: "#007AFF",
+    color: "#641BB4",
   },
   previewNotificationTitle: {
     fontSize: 16,

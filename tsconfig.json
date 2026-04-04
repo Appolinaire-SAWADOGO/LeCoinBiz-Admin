@@ -4,6 +4,7 @@
     "jsx": "react-jsx",
     "strict": true,
     "skipLibCheck": true,
-    "types": ["react", "react-native"]
+    "types": ["react", "react-native"],
+    "moduleResolution": "bundler"
   }
 }

@@ -15,6 +15,7 @@ import {
   useAllUsers,
   useAllAds,
   useDailyOpenStats,
+  useAdContactStats,
   useChangeAdCategory,
 } from "../../hooks/useDashboard";
 import AppText from "../../components/AppText";
@@ -87,6 +88,11 @@ export default function DashboardScreen() {
   const [customFrom, setCustomFrom] = useState(defaultRange.from);
   const [customTo, setCustomTo] = useState(defaultRange.to);
 
+  const [contactRangePreset, setContactRangePreset] =
+    useState<RangePreset>("1w");
+  const [contactCustomFrom, setContactCustomFrom] = useState(defaultRange.from);
+  const [contactCustomTo, setContactCustomTo] = useState(defaultRange.to);
+
   const { from, to } = useMemo(() => {
     if (rangePreset === "custom") {
       return {
@@ -98,6 +104,16 @@ export default function DashboardScreen() {
     return getRangeFromPreset(rangePreset);
   }, [rangePreset, customFrom, customTo]);
 
+  const { from: contactFrom, to: contactTo } = useMemo(() => {
+    if (contactRangePreset === "custom") {
+      return {
+        from: contactCustomFrom.trim(),
+        to: contactCustomTo.trim(),
+      };
+    }
+    return getRangeFromPreset(contactRangePreset);
+  }, [contactRangePreset, contactCustomFrom, contactCustomTo]);
+
   const isCustomRangeValid =
     rangePreset !== "custom" ||
     (!from || !to
@@ -105,6 +121,14 @@ export default function DashboardScreen() {
       : /^\d{4}-\d{2}-\d{2}$/.test(from) &&
         /^\d{4}-\d{2}-\d{2}$/.test(to) &&
         from <= to);
+
+  const isCustomContactRangeValid =
+    contactRangePreset !== "custom" ||
+    (!contactFrom || !contactTo
+      ? false
+      : /^\d{4}-\d{2}-\d{2}$/.test(contactFrom) &&
+        /^\d{4}-\d{2}-\d{2}$/.test(contactTo) &&
+        contactFrom <= contactTo);
 
   const {
     data: users = [],
@@ -127,12 +151,22 @@ export default function DashboardScreen() {
     isRefetching: isRefetchingOpenStats,
   } = useDailyOpenStats(from, to);
 
+  const {
+    data: contactStats = [],
+    isLoading: contactStatsLoading,
+    refetch: refetchContactStats,
+    isRefetching: isRefetchingContactStats,
+  } = useAdContactStats(contactFrom, contactTo);
+
   const { mutateAsync: changeAdCategory, isPending: isUpdatingAdCategory } =
     useChangeAdCategory();
 
   const isLoading = usersLoading || adsLoading || openStatsLoading;
   const isRefreshing =
-    isRefetchingUsers || isRefetchingAds || isRefetchingOpenStats;
+    isRefetchingUsers ||
+    isRefetchingAds ||
+    isRefetchingOpenStats ||
+    isRefetchingContactStats;
 
   const periodTotals = useMemo(() => {
     return openStats.reduce(
@@ -152,10 +186,31 @@ export default function DashboardScreen() {
     return Math.max(...openStats.map((stat) => stat.total || 0), 1);
   }, [openStats]);
 
+  const contactPeriodTotals = useMemo(() => {
+    return contactStats.reduce(
+      (acc, stat) => {
+        acc.total += stat.total ?? 0;
+        acc.whatsapp += stat.whatsapp ?? 0;
+        acc.sms += stat.sms ?? 0;
+        acc.call += stat.call ?? 0;
+        return acc;
+      },
+      { total: 0, whatsapp: 0, sms: 0, call: 0 },
+    );
+  }, [contactStats]);
+
+  const maxDailyContactTotal = useMemo(() => {
+    if (!contactStats.length) {
+      return 1;
+    }
+    return Math.max(...contactStats.map((stat) => stat.total || 0), 1);
+  }, [contactStats]);
+
   const handleRefresh = () => {
     refetchUsers();
     refetchAds();
     refetchOpenStats();
+    refetchContactStats();
   };
 
   const getAdSubCategory = (item: AnnouncementType) => {
@@ -279,6 +334,14 @@ export default function DashboardScreen() {
           <AppText style={styles.cardMeta}>
             {item.city} · {item.stats?.clicks ?? 0} clics
           </AppText>
+          <AppText style={styles.cardMeta}>
+            Publié le{" "}
+            {item.createdAt
+              ? new Date(item.createdAt._seconds * 1000).toLocaleDateString(
+                  "fr-FR",
+                )
+              : "—"}
+          </AppText>
           <View
             style={[
               styles.statusBadge,
@@ -401,13 +464,8 @@ export default function DashboardScreen() {
     );
   }
 
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <AppText style={styles.headerTitle}>Dashboard</AppText>
-      </View>
-
+  const dashboardHeader = (
+    <View>
       {/* Stats cards */}
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
@@ -432,6 +490,7 @@ export default function DashboardScreen() {
         </View>
       </View>
 
+      {/* Users activity section */}
       <View style={styles.activitySection}>
         <AppText style={styles.activityTitle}>
           Utilisateurs actifs dans le temps
@@ -570,6 +629,179 @@ export default function DashboardScreen() {
         )}
       </View>
 
+      {/* Contacts des annonces section */}
+      <View style={styles.activitySection}>
+        <AppText style={styles.activityTitle}>
+          Contacts des annonces dans le temps
+        </AppText>
+        <AppText style={styles.activitySubtitle}>
+          Période: {contactFrom || "-"} au {contactTo || "-"}
+        </AppText>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.rangeButtonsRow}
+        >
+          {PRESET_OPTIONS.map((option) => (
+            <TouchableOpacity
+              key={option.key}
+              style={[
+                styles.rangeButton,
+                contactRangePreset === option.key && styles.rangeButtonActive,
+              ]}
+              onPress={() => setContactRangePreset(option.key)}
+            >
+              <AppText
+                style={[
+                  styles.rangeButtonText,
+                  contactRangePreset === option.key &&
+                    styles.rangeButtonTextActive,
+                ]}
+              >
+                {option.label}
+              </AppText>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {contactRangePreset === "custom" && (
+          <View style={styles.customRangeRow}>
+            <View style={styles.customInputGroup}>
+              <AppText style={styles.customInputLabel}>Du</AppText>
+              <TextInput
+                style={styles.customInput}
+                value={contactCustomFrom}
+                onChangeText={setContactCustomFrom}
+                placeholder="YYYY-MM-DD"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+            <View style={styles.customInputGroup}>
+              <AppText style={styles.customInputLabel}>Au</AppText>
+              <TextInput
+                style={styles.customInput}
+                value={contactCustomTo}
+                onChangeText={setContactCustomTo}
+                placeholder="YYYY-MM-DD"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+          </View>
+        )}
+
+        {!isCustomContactRangeValid && (
+          <AppText style={styles.rangeErrorText}>
+            Format invalide. Utilisez YYYY-MM-DD et vérifiez que "Du" est avant
+            "Au".
+          </AppText>
+        )}
+
+        {contactStatsLoading ? (
+          <ActivityIndicator
+            size="small"
+            color="#641BB4"
+            style={styles.activityLoader}
+          />
+        ) : contactStats.length === 0 ? (
+          <AppText style={styles.emptyActivityText}>
+            Aucune statistique de contact disponible sur cette période.
+          </AppText>
+        ) : (
+          <>
+            <View style={styles.activitySummaryRow}>
+              <View style={styles.activitySummaryCard}>
+                <AppText style={styles.activitySummaryNumber}>
+                  {contactPeriodTotals.total}
+                </AppText>
+                <AppText style={styles.activitySummaryLabel}>Total</AppText>
+              </View>
+              <View style={styles.activitySummaryCard}>
+                <AppText style={styles.activitySummaryNumber}>
+                  {contactPeriodTotals.whatsapp}
+                </AppText>
+                <AppText style={styles.activitySummaryLabel}>WhatsApp</AppText>
+              </View>
+              <View style={styles.activitySummaryCard}>
+                <AppText style={styles.activitySummaryNumber}>
+                  {contactPeriodTotals.sms}
+                </AppText>
+                <AppText style={styles.activitySummaryLabel}>SMS</AppText>
+              </View>
+              <View style={styles.activitySummaryCard}>
+                <AppText style={styles.activitySummaryNumber}>
+                  {contactPeriodTotals.call}
+                </AppText>
+                <AppText style={styles.activitySummaryLabel}>Appel</AppText>
+              </View>
+            </View>
+
+            <View style={styles.timelineList}>
+              {contactStats.map((stat) => {
+                const wpWidth: `${number}%` = `${Math.round(
+                  ((stat.whatsapp || 0) / maxDailyContactTotal) * 100,
+                )}%`;
+                const smsWidth: `${number}%` = `${Math.round(
+                  ((stat.sms || 0) / maxDailyContactTotal) * 100,
+                )}%`;
+                const callWidth: `${number}%` = `${Math.round(
+                  ((stat.call || 0) / maxDailyContactTotal) * 100,
+                )}%`;
+
+                return (
+                  <View key={stat.date} style={styles.timelineItem}>
+                    <View style={styles.timelineHeader}>
+                      <AppText style={styles.timelineDate}>{stat.date}</AppText>
+                      <AppText style={styles.timelineValues}>
+                        {stat.total} contacts
+                      </AppText>
+                    </View>
+
+                    <View style={styles.contactBarRow}>
+                      <AppText style={styles.contactBarLabel}>WA</AppText>
+                      <View style={[styles.timelineTrack, { flex: 1 }]}>
+                        <View
+                          style={[styles.contactBarWA, { width: wpWidth }]}
+                        />
+                      </View>
+                      <AppText style={styles.contactBarValue}>
+                        {stat.whatsapp}
+                      </AppText>
+                    </View>
+
+                    <View style={styles.contactBarRow}>
+                      <AppText style={styles.contactBarLabel}>SMS</AppText>
+                      <View style={[styles.timelineTrack, { flex: 1 }]}>
+                        <View
+                          style={[styles.contactBarSMS, { width: smsWidth }]}
+                        />
+                      </View>
+                      <AppText style={styles.contactBarValue}>
+                        {stat.sms}
+                      </AppText>
+                    </View>
+
+                    <View style={styles.contactBarRow}>
+                      <AppText style={styles.contactBarLabel}>Tél</AppText>
+                      <View style={[styles.timelineTrack, { flex: 1 }]}>
+                        <View
+                          style={[styles.contactBarCall, { width: callWidth }]}
+                        />
+                      </View>
+                      <AppText style={styles.contactBarValue}>
+                        {stat.call}
+                      </AppText>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
+      </View>
+
       {/* Tabs */}
       <View style={styles.tabs}>
         <TouchableOpacity
@@ -599,21 +831,32 @@ export default function DashboardScreen() {
           </AppText>
         </TouchableOpacity>
       </View>
+    </View>
+  );
 
-      {/* List */}
+  const refreshControl = (
+    <RefreshControl
+      refreshing={isRefreshing}
+      onRefresh={handleRefresh}
+      colors={["#641BB4"]}
+    />
+  );
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <AppText style={styles.headerTitle}>Dashboard</AppText>
+      </View>
+
       {activeTab === "users" ? (
         <FlatList
           data={users}
           keyExtractor={(item) => item.id}
           renderItem={renderUserItem}
+          ListHeaderComponent={dashboardHeader}
           contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              colors={["#641BB4"]}
-            />
-          }
+          refreshControl={refreshControl}
           ListEmptyComponent={
             <AppText style={styles.emptyText}>
               Aucun utilisateur trouvé.
@@ -625,14 +868,9 @@ export default function DashboardScreen() {
           data={ads}
           keyExtractor={(item) => item.id}
           renderItem={renderAdItem}
+          ListHeaderComponent={dashboardHeader}
           contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              colors={["#641BB4"]}
-            />
-          }
+          refreshControl={refreshControl}
           ListEmptyComponent={
             <AppText style={styles.emptyText}>Aucune annonce trouvée.</AppText>
           }
@@ -658,7 +896,7 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: "row",
-    padding: 12,
+    paddingVertical: 12,
     gap: 8,
   },
   statCard: {
@@ -685,7 +923,6 @@ const styles = StyleSheet.create({
   },
   activitySection: {
     backgroundColor: "#fff",
-    marginHorizontal: 12,
     marginBottom: 10,
     borderRadius: 10,
     padding: 12,
@@ -843,7 +1080,6 @@ const styles = StyleSheet.create({
   tabs: {
     flexDirection: "row",
     backgroundColor: "#fff",
-    marginHorizontal: 12,
     borderRadius: 10,
     padding: 4,
     marginBottom: 8,
@@ -989,4 +1225,48 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   emptyText: { textAlign: "center", color: "#9CA3AF", marginTop: 40 },
+
+  contactBarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 5,
+  },
+  contactBarLabel: {
+    fontSize: 10,
+    color: "#6B7280",
+    width: 26,
+    fontWeight: "600",
+  },
+  contactBarValue: {
+    fontSize: 10,
+    color: "#374151",
+    width: 22,
+    textAlign: "right",
+    fontWeight: "600",
+  },
+  contactBarWA: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "#641BB4",
+    borderRadius: 999,
+  },
+  contactBarSMS: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "#641BB4",
+    borderRadius: 999,
+  },
+  contactBarCall: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "#641BB4",
+    borderRadius: 999,
+  },
 });

@@ -112,6 +112,40 @@ export const useDailyOpenStats = (from: string, to: string) => {
   });
 };
 
+type DailyContactStat = {
+  date: string;
+  total: number;
+  whatsapp: number;
+  sms: number;
+  call: number;
+};
+
+type GetAdContactStatsResponse = {
+  stats: DailyContactStat[];
+};
+
+export const useAdContactStats = (from: string, to: string) => {
+  return useQuery({
+    queryKey: ["ad-contacts", from, to],
+    enabled: !!from && !!to && from <= to,
+    queryFn: async () => {
+      try {
+        const getAdContactStatsFunction =
+          firebasyeFunctions.httpsCallable("getAdContactStats");
+        const result = await getAdContactStatsFunction({ from, to });
+        const data = result.data as GetAdContactStatsResponse | undefined;
+        return data?.stats ?? [];
+      } catch (error) {
+        console.log(
+          "Erreur lors de la récupération des statistiques de contacts:",
+          error,
+        );
+        return [];
+      }
+    },
+  });
+};
+
 type ChangeAdCategoryPayload = {
   adId: string;
   category: string;

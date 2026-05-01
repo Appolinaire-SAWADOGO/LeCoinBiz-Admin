@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "../config/firebase";
 import { AnnouncementType, UserType } from "../types";
 import { firebasyeFunctions } from "../utils/firebase";
@@ -6,6 +6,17 @@ import { firebasyeFunctions } from "../utils/firebase";
 type AdminGetUsersResponse = {
   users: UserType[];
   total: number;
+};
+
+type DailyOpenStat = {
+  date: string;
+  total: number;
+  authenticated: number;
+  anonymous: number;
+};
+
+type GetDailyOpenStatsResponse = {
+  stats: DailyOpenStat[];
 };
 
 export const useAllUsers = () => {
@@ -47,13 +58,87 @@ export const useAllAds = () => {
         const snapshot = await db.collection("Ads").get();
         const ads: AnnouncementType[] = [];
         snapshot.forEach((doc) => {
-          ads.push({ id: doc.id, ...doc.data() } as AnnouncementType);
+          const raw = doc.data() as AnnouncementType & {
+            subcategory?: string;
+          };
+          const { id: _ignoredId, ...rest } = raw;
+
+          ads.push({
+            id: doc.id,
+            ...rest,
+            subCategory: raw.subcategory ?? raw.subCategory,
+          } as AnnouncementType);
         });
-        return ads;
+
+        return ads.sort((a, b) => {
+          const aSeconds = a.createdAt?._seconds ?? 0;
+          const bSeconds = b.createdAt?._seconds ?? 0;
+          const aNanos = a.createdAt?._nanoseconds ?? 0;
+          const bNanos = b.createdAt?._nanoseconds ?? 0;
+
+          if (bSeconds !== aSeconds) {
+            return bSeconds - aSeconds;
+          }
+
+          return bNanos - aNanos;
+        });
       } catch (error) {
         console.log("Erreur lors de la récupération des annonces:", error);
         return [];
       }
+    },
+  });
+};
+
+export const useDailyOpenStats = (from: string, to: string) => {
+  return useQuery({
+    queryKey: ["daily-opens", from, to],
+    enabled: !!from && !!to && from <= to,
+    queryFn: async () => {
+      try {
+        const getDailyOpenStatsFunction =
+          firebasyeFunctions.httpsCallable("getDailyOpenStats");
+        const result = await getDailyOpenStatsFunction({ from, to });
+        const data = result.data as GetDailyOpenStatsResponse | undefined;
+        return data?.stats ?? [];
+      } catch (error) {
+        console.log(
+          "Erreur lors de la récupération des statistiques d'ouverture:",
+          error,
+        );
+        return [];
+      }
+    },
+  });
+};
+
+type ChangeAdCategoryPayload = {
+  adId: string;
+  category: string;
+  subCategory: string;
+};
+
+export const useChangeAdCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      adId,
+      category,
+      subCategory,
+    }: ChangeAdCategoryPayload) => {
+      const adminChangeAdCatAndSubCatById = firebasyeFunctions.httpsCallable(
+        "adminChangeAdCatAndSubCatById",
+      );
+
+      await adminChangeAdCatAndSubCatById({
+        adId,
+        category,
+        subCategory,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["ads", "all"] });
     },
   });
 };

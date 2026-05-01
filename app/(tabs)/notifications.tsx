@@ -198,15 +198,15 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
-    backgroundColor: "#fff",
-    padding: 16,
-    paddingTop: 50,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    backgroundColor: "#641BB4",
+    paddingTop: 56,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
+    color: "#fff",
   },
   content: {
     padding: 16,

@@ -201,15 +201,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
   },
   header: {
-    backgroundColor: "#fff",
-    padding: 16,
-    paddingTop: 50,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    backgroundColor: "#641BB4",
+    paddingTop: 56,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
+    color: "#fff",
   },
   searchContainer: {
     backgroundColor: "#fff",

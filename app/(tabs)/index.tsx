@@ -113,20 +113,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   header: {
-    backgroundColor: "#fff",
-    padding: 16,
-    paddingTop: 50,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    backgroundColor: "#641BB4",
+    paddingTop: 56,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     marginBottom: 4,
+    color: "#fff",
   },
   headerCount: {
     fontSize: 14,
-    color: "#666",
+    color: "#E9D5FF",
   },
   listContainer: {
     padding: 16,

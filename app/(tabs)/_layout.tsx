@@ -37,6 +37,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="boost-payments"
+        options={{
+          title: "Boosts",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="rocket-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="search"
         options={{
           title: "Recherche",

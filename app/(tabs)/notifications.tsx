@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   View,
-  Text,
   TextInput,
   StyleSheet,
   TouchableOpacity,
@@ -10,20 +9,41 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
-import { sendGeneralNotification } from "../../services/firebase";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getAdminNotifications,
+  sendGeneralNotification,
+} from "../../services/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import AppText from "../../components/AppText";
 
-type NotificationType = "general" | "user";
+const formatNotificationDate = (createdAt: any) => {
+  const date = createdAt?._seconds
+    ? new Date(createdAt._seconds * 1000)
+    : (createdAt?.toDate?.() ?? (createdAt ? new Date(createdAt) : null));
+  return date && !Number.isNaN(date.getTime())
+    ? date.toLocaleString("fr-FR")
+    : "—";
+};
 
 export default function NotificationsScreen() {
-  const [notificationType, setNotificationType] =
-    useState<NotificationType>("general");
+  const [showComposer, setShowComposer] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [userId, setUserId] = useState("");
   const [sending, setSending] = useState(false);
+  const queryClient = useQueryClient();
+  const {
+    data: notifications = [],
+    isLoading,
+    isError,
+    isRefetching,
+    refetch,
+  } = useQuery({
+    queryKey: ["notifications", "admin"],
+    queryFn: getAdminNotifications,
+  });
 
   const handleSendNotification = async () => {
     if (!title.trim() || !body.trim()) {
@@ -31,16 +51,9 @@ export default function NotificationsScreen() {
       return;
     }
 
-    if (notificationType === "user" && !userId.trim()) {
-      Alert.alert("Erreur", "Veuillez entrer l'ID de l'utilisateur");
-      return;
-    }
-
     Alert.alert(
       "Confirmer l'envoi",
-      notificationType === "general"
-        ? "Envoyer cette notification à tous les utilisateurs ?"
-        : `Envoyer cette notification à l'utilisateur ${userId} ?`,
+      "Envoyer cette notification à tous les utilisateurs ?",
       [
         { text: "Annuler", style: "cancel" },
         {
@@ -48,18 +61,19 @@ export default function NotificationsScreen() {
           onPress: async () => {
             setSending(true);
             try {
-              if (notificationType === "general") {
-                await sendGeneralNotification(title, body);
-                Alert.alert(
-                  "Succès",
-                  "Notification générale envoyée à tous les utilisateurs",
-                );
-              }
+              await sendGeneralNotification(title, body);
+              Alert.alert(
+                "Succès",
+                "Notification générale envoyée à tous les utilisateurs",
+              );
 
               // Réinitialiser le formulaire
               setTitle("");
               setBody("");
-              setUserId("");
+              setShowComposer(false);
+              queryClient.invalidateQueries({
+                queryKey: ["notifications", "admin"],
+              });
             } catch (error: any) {
               console.error("Error sending notification:", error);
               Alert.alert(
@@ -80,109 +94,146 @@ export default function NotificationsScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            colors={["#641BB4"]}
+            tintColor="#641BB4"
+          />
+        }
+      >
         <View style={styles.header}>
-          <AppText style={styles.headerTitle}>Envoyer une notification</AppText>
+          <AppText style={styles.headerTitle}>Notifications</AppText>
         </View>
 
         <View style={styles.content}>
-          <AppText style={styles.sectionTitle}>Type de notification</AppText>
-          <View style={styles.typeContainer}>
+          <View style={styles.listHeader}>
+            <AppText style={styles.sectionTitle}>Historique</AppText>
+            <AppText style={styles.count}>{notifications.length}</AppText>
+          </View>
+          {isLoading && <ActivityIndicator color="#641BB4" />}
+          {isError && (
+            <AppText style={styles.statusText}>
+              Impossible de charger les notifications.
+            </AppText>
+          )}
+          {!isLoading && !isError && notifications.length === 0 && (
+            <AppText style={styles.statusText}>
+              Aucune notification envoyée.
+            </AppText>
+          )}
+          {!isLoading &&
+            !isError &&
+            notifications.map((notification: any) => (
+              <View key={notification.id} style={styles.notificationCard}>
+                <View style={styles.notificationIcon}>
+                  <Ionicons name="notifications" size={20} color="#641BB4" />
+                </View>
+                <View style={styles.notificationDetails}>
+                  <AppText style={styles.notificationTitle}>
+                    {notification.title || "Notification sans titre"}
+                  </AppText>
+                  <AppText style={styles.notificationBody}>
+                    {notification.body || "Aucun message"}
+                  </AppText>
+                  <AppText style={styles.notificationDate}>
+                    {formatNotificationDate(notification.createdAt)}
+                  </AppText>
+                </View>
+              </View>
+            ))}
+
+          {!showComposer ? (
             <TouchableOpacity
-              style={[
-                styles.typeButton,
-                notificationType === "general" && styles.typeButtonActive,
-              ]}
-              onPress={() => setNotificationType("general")}
+              style={styles.newNotificationButton}
+              onPress={() => setShowComposer(true)}
             >
-              <Ionicons
-                name="people"
-                size={24}
-                color={notificationType === "general" ? "#fff" : "#641BB4"}
-              />
-              <AppText
-                style={[
-                  styles.typeButtonText,
-                  notificationType === "general" && styles.typeButtonTextActive,
-                ]}
-              >
-                Générale
+              <Ionicons name="add" size={20} color="#fff" />
+              <AppText style={styles.sendButtonText}>
+                Envoyer une notification générale
               </AppText>
             </TouchableOpacity>
-          </View>
+          ) : (
+            <View style={styles.composer}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => setShowComposer(false)}
+              >
+                <Ionicons name="arrow-back" size={20} color="#641BB4" />
+                <AppText style={styles.backButtonText}>
+                  Retour à l'historique
+                </AppText>
+              </TouchableOpacity>
+              <AppText style={styles.sectionTitle}>
+                Nouvelle notification générale
+              </AppText>
+              <View style={styles.inputContainer}>
+                <AppText style={styles.label}>Titre *</AppText>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Titre de la notification"
+                  value={title}
+                  onChangeText={setTitle}
+                  maxLength={100}
+                />
+                <AppText style={styles.charCount}>{title.length}/100</AppText>
+              </View>
 
-          {notificationType === "user" && (
-            <View style={styles.inputContainer}>
-              <AppText style={styles.label}>ID Utilisateur *</AppText>
-              <TextInput
-                style={styles.input}
-                placeholder="Entrez l'ID de l'utilisateur"
-                value={userId}
-                onChangeText={setUserId}
-                autoCapitalize="none"
-              />
+              <View style={styles.inputContainer}>
+                <AppText style={styles.label}>Message *</AppText>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Contenu de la notification"
+                  value={body}
+                  onChangeText={setBody}
+                  multiline
+                  numberOfLines={6}
+                  maxLength={500}
+                  textAlignVertical="top"
+                />
+                <AppText style={styles.charCount}>{body.length}/500</AppText>
+              </View>
+
+              <View style={styles.previewContainer}>
+                <AppText style={styles.previewTitle}>Aperçu</AppText>
+                <View style={styles.previewCard}>
+                  <View style={styles.previewHeader}>
+                    <Ionicons name="notifications" size={20} color="#641BB4" />
+                    <AppText style={styles.previewAppName}>LeCoinBiz</AppText>
+                  </View>
+                  <AppText style={styles.previewNotificationTitle}>
+                    {title || "Titre de la notification"}
+                  </AppText>
+                  <AppText style={styles.previewNotificationBody}>
+                    {body || "Contenu de la notification"}
+                  </AppText>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  sending && styles.sendButtonDisabled,
+                ]}
+                onPress={handleSendNotification}
+                disabled={sending}
+              >
+                {sending ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="send" size={20} color="#fff" />
+                    <AppText style={styles.sendButtonText}>
+                      Envoyer la notification
+                    </AppText>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
           )}
-
-          <View style={styles.inputContainer}>
-            <AppText style={styles.label}>Titre *</AppText>
-            <TextInput
-              style={styles.input}
-              placeholder="Titre de la notification"
-              value={title}
-              onChangeText={setTitle}
-              maxLength={100}
-            />
-            <AppText style={styles.charCount}>{title.length}/100</AppText>
-          </View>
-
-          <View style={styles.inputContainer}>
-            <AppText style={styles.label}>Message *</AppText>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Contenu de la notification"
-              value={body}
-              onChangeText={setBody}
-              multiline
-              numberOfLines={6}
-              maxLength={500}
-              textAlignVertical="top"
-            />
-            <AppText style={styles.charCount}>{body.length}/500</AppText>
-          </View>
-
-          <View style={styles.previewContainer}>
-            <AppText style={styles.previewTitle}>Aperçu</AppText>
-            <View style={styles.previewCard}>
-              <View style={styles.previewHeader}>
-                <Ionicons name="notifications" size={20} color="#641BB4" />
-                <AppText style={styles.previewAppName}>LeCoinBiz</AppText>
-              </View>
-              <AppText style={styles.previewNotificationTitle}>
-                {title || "Titre de la notification"}
-              </AppText>
-              <AppText style={styles.previewNotificationBody}>
-                {body || "Contenu de la notification"}
-              </AppText>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.sendButton, sending && styles.sendButtonDisabled]}
-            onPress={handleSendNotification}
-            disabled={sending}
-          >
-            {sending ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <Ionicons name="send" size={20} color="#fff" />
-                <AppText style={styles.sendButtonText}>
-                  Envoyer la notification
-                </AppText>
-              </>
-            )}
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -215,6 +266,84 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 12,
+  },
+  listHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  count: {
+    backgroundColor: "#641BB4",
+    borderRadius: 12,
+    color: "#fff",
+    minWidth: 28,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    textAlign: "center",
+  },
+  statusText: {
+    color: "#666",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  notificationCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    flexDirection: "row",
+    marginBottom: 12,
+    padding: 14,
+  },
+  notificationIcon: {
+    alignItems: "center",
+    backgroundColor: "#f0e8fb",
+    borderRadius: 20,
+    height: 40,
+    justifyContent: "center",
+    marginRight: 12,
+    width: 40,
+  },
+  notificationDetails: {
+    flex: 1,
+  },
+  notificationTitle: {
+    color: "#333",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  notificationBody: {
+    color: "#666",
+    fontSize: 14,
+    lineHeight: 19,
+  },
+  notificationDate: {
+    color: "#999",
+    fontSize: 12,
+    marginTop: 8,
+  },
+  newNotificationButton: {
+    alignItems: "center",
+    backgroundColor: "#641BB4",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 8,
+    padding: 16,
+  },
+  composer: {
+    marginTop: 8,
+  },
+  backButton: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 20,
+  },
+  backButtonText: {
+    color: "#641BB4",
+    fontSize: 15,
+    fontWeight: "bold",
   },
   typeContainer: {
     flexDirection: "row",

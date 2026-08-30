@@ -8,17 +8,6 @@ type AdminGetUsersResponse = {
   total: number;
 };
 
-type DailyOpenStat = {
-  date: string;
-  total: number;
-  authenticated: number;
-  anonymous: number;
-};
-
-type GetDailyOpenStatsResponse = {
-  stats: DailyOpenStat[];
-};
-
 export const useAllUsers = () => {
   return useQuery({
     queryKey: ["users", "all"],
@@ -84,62 +73,6 @@ export const useAllAds = () => {
         });
       } catch (error) {
         console.log("Erreur lors de la récupération des annonces:", error);
-        return [];
-      }
-    },
-  });
-};
-
-export const useDailyOpenStats = (from: string, to: string) => {
-  return useQuery({
-    queryKey: ["daily-opens", from, to],
-    enabled: !!from && !!to && from <= to,
-    queryFn: async () => {
-      try {
-        const getDailyOpenStatsFunction =
-          firebasyeFunctions.httpsCallable("getDailyOpenStats");
-        const result = await getDailyOpenStatsFunction({ from, to });
-        const data = result.data as GetDailyOpenStatsResponse | undefined;
-        return data?.stats ?? [];
-      } catch (error) {
-        console.log(
-          "Erreur lors de la récupération des statistiques d'ouverture:",
-          error,
-        );
-        return [];
-      }
-    },
-  });
-};
-
-type DailyContactStat = {
-  date: string;
-  total: number;
-  whatsapp: number;
-  sms: number;
-  call: number;
-};
-
-type GetAdContactStatsResponse = {
-  stats: DailyContactStat[];
-};
-
-export const useAdContactStats = (from: string, to: string) => {
-  return useQuery({
-    queryKey: ["ad-contacts", from, to],
-    enabled: !!from && !!to && from <= to,
-    queryFn: async () => {
-      try {
-        const getAdContactStatsFunction =
-          firebasyeFunctions.httpsCallable("getAdContactStats");
-        const result = await getAdContactStatsFunction({ from, to });
-        const data = result.data as GetAdContactStatsResponse | undefined;
-        return data?.stats ?? [];
-      } catch (error) {
-        console.log(
-          "Erreur lors de la récupération des statistiques de contacts:",
-          error,
-        );
         return [];
       }
     },
